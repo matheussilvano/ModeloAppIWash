@@ -93,12 +93,100 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+(function() {
+    emailjs.init("nrIh2jWN0mxToFbpS");
+})();
+
 function finishAndReset() {
-    alert('Pagamento selecionado! Obrigado pela preferência.');
-    // Reset all forms
-    document.querySelectorAll('form').forEach(form => form.reset());
-    currentTotal = 0;
-    document.getElementById('total').textContent = '0,00';
-    // Return to start screen
-    showScreen('start-screen');
+    // Coleta todos os dados do formulário
+    const clientForm = document.getElementById('clientForm');
+    const servicesForm = document.getElementById('servicesForm');
+    const addressForm = document.getElementById('addressForm');
+
+    // Coleta os serviços selecionados
+    const selectedServices = [];
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedServices.push(checkbox.parentElement.textContent.trim());
+    });
+
+    // Prepara os dados para envio
+    const formData = {
+        // Dados do cliente
+        nome: document.querySelector('#name').value,
+        telefone: document.querySelector('#telefone').value,
+        cpf: document.querySelector('#cpf').value,
+        email: document.querySelector('#email').value,
+        
+        // Dados do veículo
+        marca: document.querySelector('#car-brand').value,
+        modelo: document.querySelector('#car-model').value,
+        placa: document.querySelector('#car-plate').value,
+        danos: document.querySelector('#has-damage').value === 'yes' ? 
+            document.querySelector('#damage-description').value : 'Sem danos',
+        
+        // Serviços selecionados
+        servicos: selectedServices.join(', '),
+        valorTotal: currentTotal,
+        
+        // Endereço
+        estado: document.querySelector('#state').value,
+        cidade: document.querySelector('#city').value,
+        bairro: document.querySelector('#neighborhood').value,
+        logradouro: document.querySelector('#street').value,
+        numero: document.querySelector('#number').value,
+        observacoes: document.querySelector('#observations').value || 'Sem observações'
+    };
+
+    // Envia o email usando EmailJS
+    emailjs.send(
+        "service_gzls35p",
+        "template_vnpj6do",
+        {
+            to_name: "IWash",
+            from_name: formData.nome,
+            message: `
+                Novo pedido de lavagem:
+                
+                Dados do Cliente:
+                Nome: ${formData.nome}
+                Telefone: ${formData.telefone}
+                CPF: ${formData.cpf}
+                Email: ${formData.email}
+                
+                Dados do Veículo:
+                Marca: ${formData.marca}
+                Modelo: ${formData.modelo}
+                Placa: ${formData.placa}
+                Danos: ${formData.danos}
+                
+                Serviços Selecionados:
+                ${formData.servicos}
+                Valor Total: R$ ${formData.valorTotal.toFixed(2)}
+                
+                Endereço para Atendimento:
+                Estado: ${formData.estado}
+                Cidade: ${formData.cidade}
+                Bairro: ${formData.bairro}
+                Logradouro: ${formData.logradouro}
+                Número: ${formData.numero}
+                Observações: ${formData.observacoes}
+            `
+        }
+    ).then(
+        function(response) {
+            console.log("Email enviado com sucesso!", response);
+            alert("Pedido enviado com sucesso!");
+            
+            // Reset todos os formulários
+            document.querySelectorAll('form').forEach(form => form.reset());
+            currentTotal = 0;
+            document.getElementById('total').textContent = '0,00';
+            // Retorna para a tela inicial
+            showScreen('start-screen');
+        },
+        function(error) {
+            console.log("Erro ao enviar email:", error);
+            alert("Erro ao enviar pedido. Por favor, tente novamente.");
+        }
+    );
 }
